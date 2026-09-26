@@ -7,7 +7,7 @@ New packages are tracked as GitHub issues with a `pri-high`, `pri-med`, or `pri-
 ## Current baseline
 
 - Packages on the Bend hub, published by hash and waiting for names: `bend-kit-http@0.14.0.0`, `bend-kit-bytes@0.3.0.0` (`0x49814d83de8f70993a43e1002be29ecd`; `http` still imports `0.2.0.0`), `bend-kit-wire@0.4.0.0`, `bend-kit-url@0.4.0.0`, `bend-kit-json@0.3.0.0`, `bend-kit-encoding@0.2.1.0`, `bend-kit-dns@0.3.1.0`, `bend-kit-zlib@0.1.0.0`, `bend-kit-router@0.1.1.0`. Each description links to its source folder. `http` and `dns` import their siblings by hash, so callers share their types.
-- Laws: http 176, url 57, json 40, bytes 122, regex 54, unicode 35, zlib 14, dns 18, encoding 12, router 3. Run `scripts/check.sh` to check them all.
+- Laws: http 176, url 57, json 40, bytes 122, regex 54, unicode 35, zlib 22, dns 18, encoding 12, router 3. Run `scripts/check.sh` to check them all.
 - Big bodies need a native build (`bend file.bend -o app`). The `bend file.bend` runner overflows on strings over about 30 KB.
 
 ### bytes
