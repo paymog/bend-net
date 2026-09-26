@@ -25,13 +25,13 @@ C and Rust are omitted: neither standard library ships gzip or DEFLATE.
 Each program reads its inputs before any timer starts. The timed ops:
 
 - **`inflate`**: one `gunzip` / `gzip.decompress` / `gunzipSync` call on `out/payload.gz`.
-- **`deflate`**: one `gzip` / `gzip.compress` / `gzipSync` call on `out/plain.bin`, level 6 where the library has levels. Bend's `gzip` has no levels.
+- **`deflate`**: one `gzip` / `gzip.compress` / `gzipSync` call on `out/plain.bin`, level 6 where the library has levels. Bend's `gzip` has no levels; its settings follow zlib level 6.
 
 After each timer stops, the program prints a checksum of the plain bytes: `h = h*31 + b` in wrapping u32. For `deflate`, that is the checksum of its own output gunzipped again. Expected for both: **2339964736**.
 
 Throughput in the table is plain bytes per second (decimal MB/s). **gzip bytes** is the size of each language's `deflate` output.
 
-Bend reads the files with `File.read_bytes` so the bytes are not UTF-8 decoded. Bend peak RSS was about **6 MB** on **64 KiB** plain and about **227 MB** on the 4 MiB run.
+Bend reads the files with `File.read_bytes` so the bytes are not UTF-8 decoded. Bend peak RSS was about **217 MB** on the 4 MiB run.
 
 ## Results
 
@@ -39,11 +39,11 @@ M4 Pro, macOS 26.6.2, arm64, 2026-09-26. Median of five runs (`python3 run.py 5`
 
 | variant | inflate ms | inflate MB/s | deflate ms | deflate MB/s | gzip bytes | ratio |
 |---:|---:|---:|---:|---:|---:|---:|
-| Bun | 6.4 | 659 | 40.7 | 103 | 1,063,003 | 3.95x |
-| Node | 6.3 | 671 | 76.1 | 55 | 1,045,511 | 4.01x |
-| Python | 2.9 | 1,458 | 118.4 | 35 | 1,050,286 | 3.99x |
-| Bend | 212.0 | 20 | 676.0 | 6 | 1,422,023 | 2.95x |
+| Bun | 6.4 | 652 | 41.1 | 102 | 1,063,003 | 3.95x |
+| Node | 6.3 | 664 | 76.4 | 55 | 1,045,511 | 4.01x |
+| Python | 2.8 | 1,489 | 118.6 | 35 | 1,050,286 | 3.99x |
+| Bend | 205.0 | 20 | 840.0 | 5 | 1,046,915 | 4.01x |
 
-Bend's ratio is lower because it writes one fixed-Huffman block with greedy matching; the others use dynamic Huffman trees and lazy matching.
+Bend's `deflate` uses lazy matching and picks dynamic Huffman, fixed Huffman, or stored for each block of 16384 symbols.
 
 Versions: Bend 2.0.29, Bun 1.3.14, Node 24.0.1, Python 3.14.6.
