@@ -67,3 +67,75 @@ def Laws.gzip_roundtrip():
 
 def Laws.zlib_roundtrip():
   {==}
+
+def Laws.zstd_raw():
+  {==}
+
+def Laws.zstd_rle():
+  {==}
+
+def Laws.zstd_empty():
+  {==}
+
+def Laws.zstd_sequences():
+  {==}
+
+def Laws.zstd_huffman():
+  {==}
+
+def Laws.zstd_huffman4():
+  {==}
+
+def Laws.zstd_fse():
+  {==}
+
+def Laws.zstd_repeat():
+  {==}
+
+def Laws.zstd_checksum():
+  {==}
+
+def Laws.zstd_bad_checksum():
+  {==}
+
+def Laws.zstd_truncated():
+  {==}
+
+def Laws.zstd_frames():
+  {==}
+
+def Laws.zstd_dictionary():
+  {==}
+
+def Laws.zstd_bad_magic():
+  {==}
+
+def Laws.brotli_empty():
+  {==}
+
+def Laws.brotli_uncompressed():
+  {==}
+
+def Laws.brotli_quality1():
+  {==}
+
+def Laws.brotli_dictionary():
+  {==}
+
+def Laws.brotli_complex():
+  {==}
+
+def Laws.brotli_truncated():
+  {==}
+
+def Laws.brotli_trailing():
+  {==}
+
+def Laws.brotli_bad_wbits():
+  {==}
+
+def Laws.zstd_repeat_codes():
+  {==}
+
+def Laws.brotli_context_map():
+  {==}

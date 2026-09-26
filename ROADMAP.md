@@ -91,7 +91,7 @@ New packages are tracked as GitHub issues with a `pri-high`, `pri-med`, or `pri-
 ## Later
 
 - [ ] **JSON number to F32.** `Json.at` and `Json.u32` exist. `json.encode` is still `@unsafe` because it walks a work list.
-- [ ] brotli decoding, and gzip bodies with more than one member (only the first is decoded).
+- [ ] brotli and zstd bodies in `http` (`zlib` decodes both), and gzip bodies with more than one member (only the first is decoded).
 - [ ] u64 in `bytes`. Base has no `U64`; add `get.u64be` and the rest when it does, or return a hi/lo `U32` pair if a format needs it first.
 - [ ] `Bytes` as map keys. Base's `Map` is a trie over `String` keys and takes no comparator, so `Bytes.cmp` cannot key it. Use `Bytes.to_string` as the key, or add an ordered map over `cmp`.
 - [ ] More than one idle socket per origin in the pool, and decoding inside streams.
