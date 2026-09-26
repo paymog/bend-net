@@ -16,6 +16,18 @@ def every(k: Nat, +i: U32) -> String:
     case 1n+p:
       SCon{Chr{i}, every(p, (i + 1 : U32))}
 
+# BTYPE of a DEFLATE stream's first block (RFC 1951 §3.2.3).
+def btype(s: String) -> U32:
+  match s:
+    case SNil{}:
+      3
+    case SCon{Chr{c}, t}:
+      U32.and(U32.shrn(c, 1n), 3)
+
+# A skewed alphabet with few repeats.
+def skewed() -> String:
+  "ehsetri hereitseeissia ee enaeeehetetira"
+
 # RFC 1951 §3.2.4: a stored block is copied as is.
 law inflate_stored:
   {Z.inflate(bytes([1, 12, 0, 243, 255, 104, 101, 108, 108, 111, 32, 115, 116, 111, 114, 101, 100])) == Some{"hello stored"} : Maybe<&2, String>}
@@ -87,6 +99,17 @@ law deflate_run:
 
 law deflate_repeats:
   {Z.inflate(Z.deflate(String.repeat("the quick brown fox jumps over the lazy dog. ", 40n))) == Some{String.repeat("the quick brown fox jumps over the lazy dog. ", 40n)} : Maybe<&2, String>}
+
+# RFC 1951 §3.2.7: skewed text is smallest as a dynamic-Huffman block.
+law deflate_dynamic_block:
+  {btype(Z.deflate(skewed())) == 2 : U32}
+
+law deflate_dynamic:
+  {Z.inflate(Z.deflate(skewed())) == Some{skewed()} : Maybe<&2, String>}
+
+# RFC 1951 §3.2.4: 256 distinct bytes are smallest stored.
+law deflate_stored_block:
+  {btype(Z.deflate(every(256n, 0))) == 0 : U32}
 
 # These bytes decode with system gzip -d.
 law gzip_pinned:
