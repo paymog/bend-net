@@ -1,5 +1,8 @@
-# DEFLATE, gzip, and zlib encoding and decoding (RFC 1951, 1952, 1950) over byte strings. Source: https://github.com/paymog/bend-kit/tree/main/zlib
+# DEFLATE, gzip, and zlib encoding and decoding (RFC 1951, 1952, 1950), and zstd and brotli decoding (RFC 8878, 7932), over byte strings. Source: https://github.com/paymog/bend-kit/tree/main/zlib
 import Base
+# zstd.bend and brotli.bend ship with this package; import them by path.
+import ./zstd.bend as Zstd
+import ./brotli.bend as Brotli
 
 # Bytes are one Char per octet (0..255), as everywhere in bend-kit.
 

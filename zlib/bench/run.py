@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Write the inputs, build and run the zlib benchmark; print a markdown table. See README.md."""
 import gzip, os, statistics, subprocess, sys, zlib
+from compression import zstd
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "out"
 RUNS = int(sys.argv[1]) if len(sys.argv) > 1 else 3
 PLAIN = int(sys.argv[2]) if len(sys.argv) > 2 else 4_194_304
-OPS = ("inflate", "deflate")
+OPS = ("inflate", "deflate", "zstd", "brotli")
 ENV = {**os.environ, "BEND_NO_TELEMETRY": "1", "NODE_NO_WARNINGS": "1"}
 
 VARIANTS = {
@@ -100,9 +101,16 @@ def main():
     (OUT / "plain.bin").write_bytes(plain)
     gz = gzip.compress(plain, compresslevel=6, mtime=0)
     (OUT / "payload.gz").write_bytes(gz)
-    ratio = len(plain) / len(gz)
+    zst = zstd.compress(plain, options={zstd.CompressionParameter.compression_level: 3, zstd.CompressionParameter.checksum_flag: 1})
+    (OUT / "payload.zst").write_bytes(zst)
+    subprocess.run(
+        ["node", "-e", "const f=require('fs'),z=require('zlib');f.writeFileSync('out/payload.br',z.brotliCompressSync(f.readFileSync('out/plain.bin')))"],
+        cwd=HERE, env=ENV, check=True,
+    )
+    br = (OUT / "payload.br").read_bytes()
     print(
-        f"plain {PLAIN:,} bytes, gzip {len(gz):,} bytes, ratio {ratio:.2f}x",
+        f"plain {PLAIN:,} bytes, gzip {len(gz):,} ({len(plain) / len(gz):.2f}x), "
+        f"zstd {len(zst):,} ({len(plain) / len(zst):.2f}x), brotli {len(br):,} ({len(plain) / len(br):.2f}x)",
         file=sys.stderr,
     )
 
@@ -118,16 +126,16 @@ def main():
                 sys.exit(f"{name} failed:\n{r.stderr or r.stdout}")
             lines = [l for l in r.stdout.splitlines() if len(l.split("\t")) == 3]
             runs.append({op: (float(ms), c) for op, ms, c in (l.split("\t") for l in lines)})
-        table[name] = {op: statistics.median(x[op][0] for x in runs) for op in OPS}
-        checks[name] = {op: runs[0][op][1] for op in OPS}
+        table[name] = {op: statistics.median(x[op][0] for x in runs) for op in OPS if op in runs[0]}
+        checks[name] = {op: runs[0][op][1] for op in OPS if op in runs[0]}
         sizes[name] = int(runs[0]["size"][1])
         print(f"ran {name}", file=sys.stderr)
 
-    for op in OPS:
-        seen = {checks[n][op] for n in checks}
-        if len(seen) != 1:
-            sys.exit(f"checksum mismatch in {op}: {[(n, checks[n][op]) for n in checks]}")
-        print(f"{op} checksum {seen.pop()}", file=sys.stderr)
+    # Every op checks the same plain bytes, so every checksum must agree.
+    seen = {c for n in checks for c in checks[n].values()}
+    if len(seen) != 1:
+        sys.exit(f"checksum mismatch: {checks}")
+    print(f"checksum {seen.pop()}", file=sys.stderr)
 
     # Bend's gzip output must decode with the system gzip, byte for byte.
     ungz = subprocess.run(["gzip", "-dc", OUT / "bend.gz"], capture_output=True, check=True).stdout
@@ -144,6 +152,15 @@ def main():
             f"| {n} | {i:,.1f} | {mbps(PLAIN, i):,.0f} | {d:,.1f} | {mbps(PLAIN, d):,.0f} | "
             f"{sizes[n]:,} | {PLAIN / sizes[n]:.2f}x |"
         )
+    print()
+    print("| variant | zstd ms | zstd MB/s | brotli ms | brotli MB/s |")
+    print("|---:|---:|---:|---:|---:|")
+    for n in names:
+        cells = []
+        for op in ("zstd", "brotli"):
+            ms = table[n].get(op)
+            cells += ["—", "—"] if ms is None else [f"{ms:,.1f}", f"{mbps(PLAIN, ms):,.0f}"]
+        print(f"| {n} | " + " | ".join(cells) + " |")
 
 
 if __name__ == "__main__":

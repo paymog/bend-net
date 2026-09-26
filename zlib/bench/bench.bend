@@ -1,6 +1,8 @@
-# Zlib benchmark: gunzip one fixed member, and gzip its plain text (see README.md).
+# Zlib benchmark: gunzip one fixed member, gzip its plain text, and decode it from zstd and brotli (see README.md).
 import Base
 import ../zlib.bend as Z
+import ../zstd.bend as Zs
+import ../brotli.bend as Br
 
 def from_bytes(xs: List<&2, U32>) -> String:
   match xs:
@@ -27,19 +29,29 @@ def chk(s: String, h: U32) -> U32:
 def lap(+name: String, t0: Nat, t1: Nat, out: String) -> IO(Unit):
   IO.print(name ++ "\t" ++ Nat.show((t1 - t0 : Nat)) ++ "\t" ++ U32.show(chk(out, 0)))
 
-def op.inflated(t0: Nat, m: Maybe<&2, String>) -> IO(Unit):
+def op.done(+name: String, t0: Nat, m: Maybe<&2, String>) -> IO(Unit):
   match m:
     case None{}:
-      IO.print("inflate\t0\tfailed")
+      IO.print(name ++ "\t0\tfailed")
     case Some{+out}:
       do IO<Unit>:
         t1 : Nat <- IO.now()
-        lap("inflate", t0, t1, out)
+        lap(name, t0, t1, out)
 
 def op.inflate(s: String) -> IO(Unit):
   do IO<Unit>:
     t0 : Nat <- IO.now()
-    op.inflated(t0, Z.gunzip(s))
+    op.done("inflate", t0, Z.gunzip(s))
+
+def op.zstd(s: String) -> IO(Unit):
+  do IO<Unit>:
+    t0 : Nat <- IO.now()
+    op.done("zstd", t0, Zs.decode(s))
+
+def op.brotli(s: String) -> IO(Unit):
+  do IO<Unit>:
+    t0 : Nat <- IO.now()
+    op.done("brotli", t0, Br.decode(s))
 
 def unwrap(m: Maybe<&2, String>) -> String:
   match m:
@@ -103,3 +115,7 @@ def main() -> IO(Unit):
     opened(~op.inflate, g)
     p : Result<&1, &1, U32 & String, File> <- File.open("out/plain.bin", "r")
     opened(~op.deflate, p)
+    z : Result<&1, &1, U32 & String, File> <- File.open("out/payload.zst", "r")
+    opened(~op.zstd, z)
+    b : Result<&1, &1, U32 & String, File> <- File.open("out/payload.br", "r")
+    opened(~op.brotli, b)
