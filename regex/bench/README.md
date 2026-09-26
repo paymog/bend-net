@@ -27,6 +27,7 @@ The ReDoS input is **100 000** `a` with no trailing `b`.
 |---|---|---|---|---|
 | `is_match` | `hello\w+` | `hello[[:alnum:]_]+` | is there a match (late in the text) | 1 if a match, else 0 |
 | `is_match_early` | `x` | `x` | is there a match (at position 0) | 1 if a match, else 0 |
+| `is_match_live` | `xy` | `xy` | is there a match (none; each char can start one) | 0 |
 | `find_captures` | `(\w+)@(\w+)\.com` | `([[:alnum:]_]+)@([[:alnum:]_]+)\.com` | leftmost match with two captures | hash of groups 0–2 spans |
 | `find_early` | `(x)x` | `(x)x` | leftmost match with one capture, at position 0 | hash of groups 0–1 spans |
 | `redos` | `(a*)*b` | `(a*)*b` | no match on 100k `a` | 0 |
@@ -47,23 +48,25 @@ Versions: Bend 2.0.29, Apple clang 17.0.0, Python 3.14.6, Bun 1.3.14, Node v24.0
 
 | op | C | Python | Bun | Node | Bend |
 |---|---:|---:|---:|---:|---:|
-| is_match | 0.0 | 0.3 | 0.2 | 0.2 | 37.0 |
-| is_match_early | 0.0 | 0.0 | 0.1 | 0.1 | 7.0 |
-| find_captures | 17.1 | 3.1 | 0.9 | 0.7 | 735.0 |
+| is_match | 0.0 | 0.3 | 0.1 | 0.2 | 44.0 |
+| is_match_early | 0.0 | 0.0 | 0.1 | 0.1 | 6.0 |
+| is_match_live | 9.3 | 1.1 | 0.1 | 7.8 | 84.0 |
+| find_captures | 16.6 | 3.0 | 0.8 | 0.7 | 721.0 |
 | find_early | 0.0 | 0.0 | 0.2 | 0.2 | 7.0 |
-| redos | 3.6 | timeout | 882.6 | timeout | 139.0 |
+| redos | 3.2 | timeout | 872.9 | timeout | 131.0 |
 
-Checksums (1 MiB text): `is_match` 1, `is_match_early` 1, `find_captures` 3021334545, `find_early` 1923, `redos` 0. All non-timeout variants agree.
+Checksums (1 MiB text): `is_match` 1, `is_match_early` 1, `is_match_live` 0, `find_captures` 3021334545, `find_early` 1923, `redos` 0. All non-timeout variants agree.
 
 ### History
 
 Bend times in ms, median of three runs of the same bench against each version of `regex.bend`.
 
-| change | is_match | is_match_early | find_captures | find_early |
-|---|---:|---:|---:|---:|
-| before #97 | 140 | 18 | 726 | 17 |
-| #97: stop once the match is settled; `is_match` skips captures | 118 | 7 | 727 | 7 |
-| #98: skip chars that cannot start a match | 37 | 7 | 735 | 7 |
+| change | is_match | is_match_early | is_match_live | find_captures | find_early |
+|---|---:|---:|---:|---:|---:|
+| before #97 | 140 | 18 | 285 | 726 | 17 |
+| #97: stop once the match is settled; `is_match` skips captures | 118 | 7 | 239 | 727 | 7 |
+| #98: skip chars that cannot start a match | 37 | 7 | 242 | 735 | 7 |
+| #100: bit-parallel NFA for `is_match` | 44 | 6 | 84 | 721 | 7 |
 
 ## Caveats
 
